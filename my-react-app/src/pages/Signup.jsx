@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function Signup({ onSwitchPage }) {
+export default function Signup({ onSwitchPage, onAuthSuccess, initialData = {} }) {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [errors, setErrors] = useState({});
+  const [status, setStatus] = useState(null);
+
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, name: initialData.name || '', email: initialData.email || '' }));
+  }, [initialData.name, initialData.email]);
 
   const validate = () => {
     const err = {};
@@ -33,6 +38,8 @@ export default function Signup({ onSwitchPage }) {
     return err;
   };
 
+  const clearStatus = () => setStatus(null);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -40,17 +47,43 @@ export default function Signup({ onSwitchPage }) {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+    if (status) clearStatus();
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const validationErrors = validate();
-
     setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length === 0) {
-      alert('Signup successful (UI only)');
+    if (Object.keys(validationErrors).length !== 0) {
+      return;
     }
+
+    const inputUser = {
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+    };
+
+    const existingJson = localStorage.getItem('saved_user');
+    if (existingJson) {
+      try {
+        const existing = JSON.parse(existingJson);
+        if (existing.email === inputUser.email) {
+          setStatus({ type: 'error', message: 'A user with this email already exists.' });
+          return;
+        }
+      } catch {
+        // If parsing fails, overwrite broken data
+        localStorage.removeItem('saved_user');
+      }
+    }
+
+    localStorage.setItem('saved_user', JSON.stringify(inputUser));
+
+    setStatus({ type: 'success', message: 'Signup successful! Redirecting to home...' });
+    setForm((prev) => ({ ...prev, password: '' }));
+    onAuthSuccess({ name: inputUser.name, email: inputUser.email });
   };
 
   const inputClass = (field) =>
@@ -77,6 +110,7 @@ export default function Signup({ onSwitchPage }) {
             onChange={handleChange}
             placeholder="Your full name"
             className={inputClass('name')}
+            autoComplete="name"
           />
           {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
         </div>
@@ -93,6 +127,7 @@ export default function Signup({ onSwitchPage }) {
             onChange={handleChange}
             placeholder="you@example.com"
             className={inputClass('email')}
+            autoComplete="email"
           />
           {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
         </div>
@@ -109,9 +144,16 @@ export default function Signup({ onSwitchPage }) {
             onChange={handleChange}
             placeholder="Strong password"
             className={inputClass('password')}
+            autoComplete="new-password"
           />
           {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password}</p>}
         </div>
+
+        {status && (
+          <p className={`text-sm ${status.type === 'error' ? 'text-red-400' : 'text-emerald-300'}`}>
+            {status.message}
+          </p>
+        )}
 
         <button
           type="submit"
