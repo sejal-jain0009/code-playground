@@ -43,7 +43,7 @@ export default function Login({ onSwitchPage, onAuthSuccess, initialData = {} })
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length !== 0) return;
 
-    const storedJson = localStorage.getItem('saved_user');
+    const storedJson = localStorage.getItem('auth_user');
     if (!storedJson) {
       setStatus({ type: 'error', message: 'Invalid email or password.' });
       return;
@@ -60,8 +60,13 @@ export default function Login({ onSwitchPage, onAuthSuccess, initialData = {} })
     const enteredEmail = form.email.trim().toLowerCase();
     const enteredPassword = form.password;
 
+    console.log('Stored email:', storedUser.email);
+    console.log('Entered email:', enteredEmail);
+    console.log('Stored password:', storedUser.password ? '[HIDDEN]' : 'null');
+    console.log('Entered password length:', enteredPassword.length);
+
     if (storedUser.email !== enteredEmail || storedUser.password !== enteredPassword) {
-      setStatus({ type: 'error', message: 'Invalid email or password.' });
+      setStatus({ type: 'error', message: 'Invalid email or password' });
       return;
     }
 

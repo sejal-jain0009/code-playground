@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CodeEditor from '../pages/CodeEditor';
 
 export default function JavaScriptPlayground() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function JavaScriptPlayground() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4">
+    <div className="min-h-screen bg-slate-950 text-white p-4 page-transition">
       <div className="mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl">
         <div className="flex flex-wrap items-center justify-between rounded-t-3xl bg-slate-900/95 px-6 py-4">
           <button
@@ -60,6 +61,7 @@ export default function JavaScriptPlayground() {
               <option value="javascript">JavaScript</option>
               <option value="python">Python</option>
               <option value="typescript">TypeScript</option>
+              <option value="c">C</option>
             </select>
             <button
               onClick={runCode}
@@ -88,7 +90,7 @@ export default function JavaScriptPlayground() {
             <label className="text-sm font-semibold text-slate-300" htmlFor="editor-js">
               Editor
             </label>
-            <textarea
+            <CodeEditor
               id="editor-js"
               value={code}
               onChange={(e) => setCode(e.target.value)}

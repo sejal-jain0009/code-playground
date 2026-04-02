@@ -21,14 +21,13 @@ export default function AuthCard() {
 
   const navigate = useNavigate();
 
-  const onAuthSuccess = (user) => {
-    const payload = { name: user.name, email: user.email };
-    localStorage.setItem('auth_user', JSON.stringify(payload));
-    setSavedUser(payload);
+    const onAuthSuccess = (user) => {
+      localStorage.setItem('auth_user', JSON.stringify(user));
+      setSavedUser({ name: user.name, email: user.email });
 
-    // navigate to home after successful login/signup
-    navigate('/home');
-  };
+      // navigate to home after successful login/signup
+      navigate('/home');
+    };
 
   const clearSavedUser = () => {
     localStorage.removeItem('auth_user');

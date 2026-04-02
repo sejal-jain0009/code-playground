@@ -2,53 +2,56 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CodeEditor from '../pages/CodeEditor';
 
-export default function TypeScriptPlayground() {
+const initialCode = `// Write your C code here
+#include <stdio.h>
+
+int main() {
+    printf("Hello World");
+    return 0;
+}`;
+
+export default function CPlayground() {
   const navigate = useNavigate();
-  const [code, setCode] = useState('// Write your code here\nconsole.log("Hello World");');
+  const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const transpileTypeScript = (tsCode) => {
-    // Remove basic type annotations from variable declarations and function parameters
-    let jsCode = tsCode
-      .replace(/:\s*(number|string|boolean|any|unknown|void|object|Array<.*?>|\w+)/g, '')
-      .replace(/<\w+>/g, '')
-      .replace(/\sas\s+\w+/g, '');
-
-    // Remove interface/type declarations entirely
-    jsCode = jsCode.replace(/(?:interface|type)\s+[^\n{]+\{[^}]*\}/g, '');
-
-    return jsCode;
-  };
-
-  const runCode = () => {
-    const jsCode = transpileTypeScript(code);
-    let logs = [];
-    const originalLog = console.log;
-
-    console.log = (...args) => {
-      logs.push(args.map((x) => (typeof x === 'object' ? JSON.stringify(x) : String(x))).join(' '));
-      originalLog(...args);
-    };
+  const runCode = async () => {
+    setIsLoading(true);
+    setOutput('');
 
     try {
-      const result = eval(jsCode); // eslint-disable-line no-eval
+      const response = await fetch('http://localhost:5000/run-c', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
 
-      if (logs.length > 0) {
-        setOutput(logs.join('\n') + (result !== undefined ? `\n=> ${result}` : ''));
-      } else if (result !== undefined) {
-        setOutput(`=> ${result}`);
-      } else {
-        setOutput('No output from execution.');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        const message = (errData && (errData.error || errData.message)) || `HTTP error ${response.status}`;
+        setOutput(`Error: ${message}`);
+        return;
       }
+
+      const data = await response.json();
+      if (data.error) {
+        setOutput(`Error: ${data.error}`);
+        return;
+      }
+
+      setOutput(data.output || 'No output.');
     } catch (error) {
-      setOutput(`Error: ${error.message}`);
+      setOutput(`Unexpected error: ${error?.message || error}`);
     } finally {
-      console.log = originalLog;
+      setIsLoading(false);
     }
   };
 
   const clearAll = () => {
-    setCode('// Write your code here\nconsole.log("Hello World");');
+    setCode(initialCode);
     setOutput('');
   };
 
@@ -64,7 +67,7 @@ export default function TypeScriptPlayground() {
           </button>
           <div className="flex items-center gap-2">
             <select
-              value="typescript"
+              value="c"
               onChange={(e) => navigate(`/playground/${e.target.value}`)}
               className="rounded-lg border border-white/20 bg-slate-800 px-3 py-2 text-sm text-slate-100"
             >
@@ -75,9 +78,10 @@ export default function TypeScriptPlayground() {
             </select>
             <button
               onClick={runCode}
-              className="rounded-lg bg-green-500 px-4 py-2 font-semibold text-slate-950 transition hover:bg-green-400"
+              disabled={isLoading}
+              className={`rounded-lg px-4 py-2 font-semibold text-slate-950 transition ${isLoading ? 'bg-slate-600 cursor-not-allowed' : 'bg-green-500 hover:bg-green-400'}`}
             >
-              Run Code
+              {isLoading ? 'Running...' : 'Run Code'}
             </button>
             <button
               onClick={clearAll}
@@ -90,18 +94,16 @@ export default function TypeScriptPlayground() {
 
         <div className="grid gap-4 p-6 md:grid-cols-[1fr]">
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <h2 className="text-2xl font-bold text-cyan-300">TypeScript Code Playground</h2>
-            <p className="mt-1 text-sm text-slate-300">
-              Write TypeScript code with type safety and modern JavaScript features.
-            </p>
+            <h2 className="text-2xl font-bold text-cyan-300">C Code Playground</h2>
+            <p className="mt-1 text-sm text-slate-300">Write C code and execute it using backend compiler.</p>
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-slate-300" htmlFor="editor-ts">
+            <label className="text-sm font-semibold text-slate-300" htmlFor="editor-c">
               Editor
             </label>
             <CodeEditor
-              id="editor-ts"
+              id="editor-c"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               className="h-72 w-full resize-none rounded-2xl border border-white/20 bg-slate-950 p-4 font-mono text-sm text-slate-100 outline-none focus:border-cyan-500"

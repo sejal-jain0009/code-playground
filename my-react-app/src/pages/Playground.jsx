@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CodeEditor from '../components/CodeEditor';
 
 const defaultTemplates = {
   JavaScript: "// Write your code here\nconsole.log(\"Hello World\");",
@@ -59,7 +60,7 @@ export default function Playground() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4">
+    <div className="min-h-screen bg-slate-950 text-white p-4 page-transition">
       <div className="mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl">
         <div className="flex flex-wrap items-center justify-between rounded-t-3xl bg-slate-900/95 px-6 py-4">
           <button
@@ -111,7 +112,7 @@ export default function Playground() {
             <label className="text-sm font-semibold text-slate-300" htmlFor="editor">
               Editor
             </label>
-            <textarea
+            <CodeEditor
               id="editor"
               value={code}
               onChange={(e) => setCode(e.target.value)}
